@@ -35,6 +35,13 @@ def connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
+    # WAL：业务长事务持写锁时，偏航痕等独立短事务仍可排队写入。
+    # 库文件只读等无写权限环境下降级为默认日志模式，不阻断连接。
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except sqlite3.OperationalError:
+        pass
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 

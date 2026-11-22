@@ -2,6 +2,10 @@ export const bondsViewTemplate = `
 <section class="panel">
   <h2>保证金户</h2>
   <p class="hint">开户入金后，可用额 = 余额 − 已冻结。入笼只动冻结，不解出系统。</p>
+  <p class="hint" style="border-left:3px solid var(--ok);padding-left:8px">
+    命运口径（甲路径）：解笼出金同事务扣减本户 frozen/balance，并在解笼拨付页留同号凭证、
+    审计争用页留同号成功审计；无拨付册凭证号的出金一律不存在，对账不反推。
+  </p>
   <div class="grid-2">
     <div>
       <h3>开户</h3>

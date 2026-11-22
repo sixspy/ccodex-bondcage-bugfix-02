@@ -16,6 +16,7 @@ class LockIn(BaseModel):
 
 
 def try_acquire(conn, lock_key: str, holder: str) -> bool:
+    """抢锁。锁行与争用痕即时提交，保证并发连接可见、回滚业务时留痕不丢。"""
     now = now_iso()
     row = conn.execute(
         "SELECT holder FROM cage_locks WHERE lock_key=?", (lock_key,)
@@ -25,6 +26,8 @@ def try_acquire(conn, lock_key: str, holder: str) -> bool:
             "INSERT INTO cage_locks(lock_key,holder,acquired_at) VALUES (?,?,?)",
             (lock_key, holder, now),
         )
+        # 立即落盘：后到连接才能确定性看到持锁者并排队
+        conn.commit()
         return True
     if row["holder"] == holder:
         return True
@@ -33,6 +36,8 @@ def try_acquire(conn, lock_key: str, holder: str) -> bool:
            VALUES (?,?,?,?,?)""",
         (lock_key, holder, "争用", f"持有者={row['holder']}", now),
     )
+    # 争用痕独立成痕：随后业务校验抛 409 触发回滚时，此痕必须保留
+    conn.commit()
     return False
 
 

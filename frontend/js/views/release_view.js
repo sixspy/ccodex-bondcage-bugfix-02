@@ -2,6 +2,10 @@ export const releaseViewTemplate = `
 <section class="panel">
   <h2>解笼拨付</h2>
   <p class="hint">仅核验通过的笼可拨付。默认把可用额全额拨给受益人，也可部分解笼。账户余额与冻结同步扣减。</p>
+  <p class="hint" style="border-left:3px solid var(--ok);padding-left:8px">
+    命运口径（甲路径 · FATE-AUDIT-RELEASE-01）：拨付册行、笼面账户、成功审计同一事务同生共死——
+    亮成功审计则本页必有同凭证号拨付行，任一步失败整笔回滚、成功审计零增。
+  </p>
   <div class="grid-2">
     <div>
       <div class="form-row">
@@ -30,17 +34,19 @@ export const releaseViewTemplate = `
     <div>
       <table>
         <thead>
-          <tr><th>凭证</th><th>笼</th><th>金额</th><th>收款方</th><th>笼代</th><th>时间</th></tr>
+          <tr><th>凭证号</th><th>笼</th><th>金额</th><th>收款方</th><th>笼代</th><th>状态</th><th>时间</th></tr>
         </thead>
         <tbody>
           <tr v-for="r in releases" :key="r.id">
-            <td>{{ r.release_ref }}</td>
+            <td><code>{{ r.release_ref }}</code></td>
             <td>{{ r.cage_code }}</td>
             <td>{{ fmt(r.amount) }}</td>
             <td>{{ r.payee }}</td>
             <td>{{ r.cage_generation }}</td>
+            <td><span class="badge pass">{{ r.status }}</span></td>
             <td>{{ r.created_at }}</td>
           </tr>
+          <tr v-if="!releases.length"><td colspan="7" class="hint">暂无拨付册行（无真实出金）</td></tr>
         </tbody>
       </table>
     </div>

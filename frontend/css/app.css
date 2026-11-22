@@ -361,3 +361,11 @@ th {
   margin-bottom: 12px;
   font-size: 13px;
 }
+
+/* 审计拨付偏航行（FATE-AUDIT-RELEASE-01） */
+tr.row-yaw {
+  background: rgba(153, 27, 27, 0.08);
+}
+tr.row-yaw td {
+  color: var(--bad);
+}

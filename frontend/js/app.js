@@ -110,6 +110,14 @@ createApp({
       return x.toLocaleString("zh-CN", { maximumFractionDigits: 2 });
     }
 
+    function parsedPayload(a) {
+      try {
+        return JSON.parse(a.payload) || {};
+      } catch {
+        return {};
+      }
+    }
+
     function shortStatus(s) {
       if (!s) return "";
       if (s.includes("冻结")) return "冻";
@@ -432,6 +440,7 @@ createApp({
       logout,
       refresh,
       fmt,
+      parsedPayload,
       shortStatus,
       statusClass,
       openBond,

@@ -62,6 +62,22 @@ export const cagesViewTemplate = `
         <tr><td>核验条数</td><td>{{ cageDetail.attestations.length }}</td></tr>
         <tr><td>拨付条数</td><td>{{ cageDetail.releases.length }}</td></tr>
         <tr><td>罚没条数</td><td>{{ cageDetail.forfeits.length }}</td></tr>
+        <tr v-if="cageDetail.fate">
+          <td>审计拨付命运（甲路径）</td>
+          <td>
+            <span class="badge" :class="cageDetail.fate.aligned ? 'pass' : 'fail'">
+              {{ cageDetail.fate.aligned ? '审计⇔拨付册 对齐' : '偏航' }}
+            </span>
+            <div class="hint" style="margin-top:4px">
+              拨付凭证：
+              <code v-for="v in cageDetail.fate.release_vouchers" :key="v" style="margin-right:6px">{{ v }}</code>
+              <span v-if="!cageDetail.fate.release_vouchers.length">无（未真实出金）</span>
+            </div>
+            <div v-if="cageDetail.fate.unmatched_vouchers.length" class="badge fail" style="margin-top:4px">
+              有审计无拨付：{{ cageDetail.fate.unmatched_vouchers.join(', ') }}
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>

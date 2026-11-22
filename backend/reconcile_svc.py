@@ -14,14 +14,13 @@ def _reconcile_cage(conn, cage) -> dict:
     gen = int(cage["generation"])
     amount = float(cage["amount"])
     available = float(cage["available"])
-    # BUGFIX-02 埋雷：对账用笼面缺口反推「已拨付」，掩盖拨付册空行
-    released = conn.execute(
+    # FATE-AUDIT-RELEASE-01：出金只准取拨付册册内汇总，册里没有就是 0，
+    # 禁止用笼面缺口反推掩盖「有审计无拨付」分裂（缺口由 balanced/gap 如实暴露）。
+    released = float(conn.execute(
         """SELECT COALESCE(SUM(amount),0) s FROM releases
            WHERE cage_id=? AND status='已拨付' AND cage_generation=?""",
         (cage_id, gen),
-    ).fetchone()["s"]
-    if float(released) <= 0:
-        released = max(0.0, float(amount) - float(available))
+    ).fetchone()["s"])
     forfeited = conn.execute(
         """SELECT COALESCE(SUM(amount),0) s FROM forfeits
            WHERE cage_id=? AND status='已罚没' AND cage_generation=?""",
@@ -40,6 +39,16 @@ def _reconcile_cage(conn, cage) -> dict:
            WHERE party_key=? AND status IN ('已冻结','核验通过','核验违约','部分解笼','部分罚没')""",
         (party,),
     ).fetchone()["s"]
+    # 五页凭证对齐：对账页出金凭证与解笼页同取 releases.release_ref 真实行
+    release_vouchers = [
+        r["release_ref"]
+        for r in conn.execute(
+            """SELECT release_ref FROM releases
+               WHERE cage_id=? AND status='已拨付' AND cage_generation=?
+               ORDER BY id""",
+            (cage_id, gen),
+        ).fetchall()
+    ]
     return {
         "cage_id": cage_id,
         "cage_code": cage["cage_code"],
@@ -50,6 +59,7 @@ def _reconcile_cage(conn, cage) -> dict:
         "amount": amount,
         "available": available,
         "released": float(released),
+        "release_vouchers": release_vouchers,
         "forfeited": float(forfeited),
         "accounted": accounted,
         "balanced": ok,

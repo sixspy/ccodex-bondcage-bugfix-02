@@ -50,11 +50,39 @@ def get_cage(cage_id: int, authorization: AuthHeader = None):
             "SELECT * FROM forfeits WHERE cage_id=? ORDER BY id DESC",
             (cage_id,),
         ).fetchall()
+        # FATE-AUDIT-RELEASE-01 甲路径核对：每条已拨付册行都应有同凭证成功审计，
+        # 反之每条成功审计都应能按凭证号回到册行；任何缺口即偏航。
+        rel_refs = [r["release_ref"] for r in rels if r["status"] == "已拨付"]
+        yaw = conn.execute(
+            """SELECT id, action, payload FROM audit_trail
+               WHERE target=? AND action='audit_release_yaw'
+               ORDER BY id DESC LIMIT 5""",
+            (cage["cage_code"],),
+        ).fetchall()
+        fate_aligned = True
+        unmatched: list[str] = []
+        for ref in rel_refs:
+            hit = conn.execute(
+                """SELECT 1 FROM audit_trail
+                   WHERE action='cage_release' AND payload LIKE ?
+                   LIMIT 1""",
+                (f'%"release_ref": "{ref}"%',),
+            ).fetchone()
+            if not hit:
+                fate_aligned = False
+                unmatched.append(ref)
         return {
             "cage": dict(cage),
             "attestations": [dict(a) for a in atts],
             "releases": [dict(r) for r in rels],
             "forfeits": [dict(f) for f in fors],
+            "fate": {
+                "path": "甲路径：成功审计与拨付册同事务同生共死",
+                "aligned": fate_aligned and not yaw,
+                "release_vouchers": rel_refs,
+                "unmatched_vouchers": unmatched,
+                "yaw_events": [dict(y) for y in yaw],
+            },
         }
 
 

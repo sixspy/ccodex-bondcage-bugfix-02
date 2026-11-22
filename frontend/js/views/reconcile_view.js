@@ -2,6 +2,10 @@ export const reconcileViewTemplate = `
 <section class="panel">
   <h2>对账互证</h2>
   <p class="hint">笼口径：可用 + 已拨付 + 已罚没 = 笼总额（同笼代）。当事人口径：账户冻结 = 活笼可用合计。</p>
+  <p class="hint" style="border-left:3px solid var(--ok);padding-left:8px">
+    命运口径（甲路径）：拨付列只汇总拨付册真实行并随附凭证号，禁止用笼面缺口反推出金；
+    册里没有就是 0，缺口如实点亮“否”，不再假平衡。
+  </p>
   <div class="actions">
     <button @click="loadReconcile">刷新对账</button>
     <button class="secondary" @click="loadProof">当事人互证</button>
@@ -22,7 +26,7 @@ export const reconcileViewTemplate = `
     <thead>
       <tr>
         <th>笼</th><th>代</th><th>状态</th><th>总额</th><th>可用</th>
-        <th>拨付</th><th>罚没</th><th>合计</th><th>平衡</th><th>缺口</th>
+        <th>拨付（册内凭证）</th><th>罚没</th><th>合计</th><th>平衡</th><th>缺口</th>
       </tr>
     </thead>
     <tbody>
@@ -32,7 +36,13 @@ export const reconcileViewTemplate = `
         <td>{{ i.status }}</td>
         <td>{{ fmt(i.amount) }}</td>
         <td>{{ fmt(i.available) }}</td>
-        <td>{{ fmt(i.released) }}</td>
+        <td>
+          {{ fmt(i.released) }}
+          <div v-if="i.release_vouchers && i.release_vouchers.length" class="hint">
+            <code v-for="v in i.release_vouchers" :key="v" style="display:block">{{ v }}</code>
+          </div>
+          <span v-else class="hint">册内无行</span>
+        </td>
         <td>{{ fmt(i.forfeited) }}</td>
         <td>{{ fmt(i.accounted) }}</td>
         <td>
